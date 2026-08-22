@@ -1,0 +1,24 @@
+---
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import BlogPost from "@/layouts/BlogPost.astro";
+
+// Route for auto-translated posts (scripts/translate.mjs):
+//   /ja/<source-slug>/   /en/<source-slug>/
+export const getStaticPaths = (async () => {
+	const entries = await getCollection("translation", ({ data }) => {
+		return import.meta.env.PROD ? !data.draft : true;
+	});
+	return entries.map((post) => {
+		const [locale, ...slugParts] = post.id.split("/");
+		return { params: { locale, slug: slugParts.join("/") }, props: { post } };
+	});
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BlogPost post={post as unknown as CollectionEntry<"post">}>
+	<Content />
+</BlogPost>

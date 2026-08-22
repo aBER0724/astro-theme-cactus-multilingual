@@ -1,0 +1,75 @@
+---
+import type { GetStaticPaths } from "astro";
+import { aboutData } from "@/data/about";
+import { getUiStrings } from "@/i18n/ui";
+import PageLayout from "@/layouts/Base.astro";
+import { translationLocales } from "@/data/post";
+
+export const getStaticPaths = (async () => {
+	const locales = translationLocales;
+	return locales.map((locale) => ({ params: { locale }, props: { locale } }));
+}) satisfies GetStaticPaths;
+
+const ui = getUiStrings(Astro.props.locale);
+const about = aboutData[Astro.props.locale] ?? aboutData.en;
+
+const meta = {
+	description: ui["about.description"],
+	title: ui["about.title"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-12">{ui["about.title"]}</h1>
+	<div class="prose prose-sm prose-cactus max-w-none">
+		<p>{about.intro}</p>
+		<p>{about.identity}</p>
+
+		<h2>{about.currently.heading}</h2>
+		<ul class="list-inside list-disc" role="list">
+			{about.currently.entries.map((entry) => <li>{entry}</li>)}
+		</ul>
+
+		{about.blocks.map((block) => (
+			<>
+				<hr />
+				<h2>{block.heading}</h2>
+				<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+					{block.groups.map((group) => (
+						<section>
+							<h3>{group.title}</h3>
+							<ul class="list-inside list-disc" role="list">
+								{group.entries.map((entry) =>
+									entry.href ? (
+										<li>
+											<a class="cactus-link inline-block" href={entry.href} rel="noreferrer" target="_blank">
+												{entry.text}
+											</a>
+										</li>
+									) : (
+										<li>{entry.text}</li>
+									),
+								)}
+							</ul>
+						</section>
+					))}
+				</div>
+			</>
+		))}
+
+		<h2>{about.site.heading}</h2>
+		<p>
+			{
+				about.site.parts.map((part) =>
+					part.href ? (
+						<a class="cactus-link inline-block" href={part.href} rel="noreferrer" target="_blank">
+							{part.text}
+						</a>
+					) : (
+						part.text
+					),
+				)
+			}
+		</p>
+	</div>
+</PageLayout>

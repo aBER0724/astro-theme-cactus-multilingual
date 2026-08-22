@@ -1,0 +1,8 @@
+---
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+---
+<a class="sr-only focus:not-sr-only focus:fixed focus:start-1 focus:top-1.5" href="#main"
+	>{ui["skipLink"]}
+</a>

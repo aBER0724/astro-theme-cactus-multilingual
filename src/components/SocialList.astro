@@ -1,0 +1,60 @@
+---
+import { Icon } from "astro-icon/components";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+/** 
+	Uses https://www.astroicon.dev/getting-started/
+	Find icons via guide: https://www.astroicon.dev/guides/customization/#open-source-icon-sets
+	Only installed pack is: @iconify-json/mdi
+*/
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+const socialLinks: {
+	friendlyName: string;
+	isWebmention?: boolean;
+	link: string;
+	name: string;
+}[] = [
+	{
+		friendlyName: "GitHub",
+		link: "https://github.com/your-name",
+		name: "local:github",
+	},
+	{
+		friendlyName: "X",
+		link: "https://x.com/your-name",
+		name: "local:x",
+	},
+	{
+		friendlyName: "Email",
+		link: "mailto:you@example.com",
+		name: "local:mail",
+	},
+	{
+		friendlyName: "Telegram",
+		link: "https://t.me/your-name",
+		name: "local:telegram",
+	},
+];
+---
+
+<div class="flex flex-wrap items-end gap-x-2">
+	<p>{ui["home.socials"]}</p>
+	<ul class="flex flex-1 items-center gap-x-2 sm:flex-initial">
+		{
+			socialLinks.map(({ friendlyName, isWebmention, link, name }) => (
+				<li class="flex">
+					<a
+						class="hover:text-link inline-block"
+						href={link}
+						rel={`noreferrer ${isWebmention ? "me authn" : ""}`}
+						target="_blank"
+					>
+						<Icon aria-hidden="true" class="h-6 w-6" focusable="false" name={name} />
+						<span class="sr-only">{friendlyName}</span>
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</div>

@@ -1,0 +1,81 @@
+---
+import usesData from "@/data/uses.json";
+import { uiLanguageFromPath } from "@/i18n/ui";
+
+type UsesItem = {
+	title: string;
+	subtitle?: string;
+	description?: string;
+	href?: string;
+};
+
+type UsesSection = {
+	kicker?: string;
+	title: string;
+	items: UsesItem[];
+};
+
+type UsesLocaleData = {
+	description?: string;
+	sections: UsesSection[];
+};
+
+// Read the current page language, not a hardcoded "en" — uses.json has zh/ja data.
+const lang = uiLanguageFromPath(Astro.url.pathname); // "zh" | "en" | "ja", matches uses.json keys
+
+const uses =
+	(usesData as Record<string, UsesLocaleData>)[lang] ?? usesData.en ?? { sections: [] };
+
+const itemTargetAttrs = (href?: string) =>
+	href?.startsWith("http://") || href?.startsWith("https://")
+		? { target: "_blank", rel: "noopener noreferrer" }
+		: {};
+---
+
+{uses.description && <p class="text-muted mb-8">{uses.description}</p>}
+
+{
+	uses.sections.map((section, sectionIndex) => {
+		const headingId = `uses-section-${sectionIndex}`;
+
+		return (
+			<section class="mt-12" aria-labelledby={headingId}>
+				<div class="mb-5">
+					{section.kicker && <p class="text-muted mb-1 text-sm font-bold">{section.kicker}</p>}
+					<h2 id={headingId} class="text-accent-2 text-xl font-bold">
+						{section.title}
+					</h2>
+				</div>
+
+				<ul class="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8" role="list">
+					{section.items.map((item) => {
+						const ItemTag = item.href ? "a" : "div";
+
+						return (
+							<li class="border-muted/40 border-b border-dashed">
+								<ItemTag
+									class:list={[
+										"focus-visible:outline-accent flex h-full flex-col justify-center gap-1 py-4 no-underline transition-colors duration-150 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4",
+										item.href && "group",
+									]}
+									href={item.href}
+									{...itemTargetAttrs(item.href)}
+								>
+									<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+										<h3 class="text-global-text group-hover:text-link group-hover:decoration-link group-focus-visible:text-link group-focus-visible:decoration-link text-base font-bold underline decoration-transparent underline-offset-2 transition-[color,text-decoration-color] duration-150">
+											{item.title}
+										</h3>
+										{item.subtitle && <span class="text-muted text-sm">{item.subtitle}</span>}
+									</div>
+									{item.description && (
+										<p class="text-muted text-sm leading-6">{item.description}</p>
+									)}
+								</ItemTag>
+							</li>
+						);
+					})}
+				</ul>
+			</section>
+		);
+	})
+}

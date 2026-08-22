@@ -1,0 +1,96 @@
+---
+import type { MarkdownHeading } from "astro";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+interface Props {
+	headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+const toc = headings.filter(
+	h => h.depth >= 2 && h.depth <= 4 && h.slug !== "footnote-label",
+);
+---
+
+{
+	!!toc.length && (
+		<nav
+			class="toc lg:sticky lg:top-12 lg:order-2 lg:-me-32 lg:basis-64"
+			aria-label={ui["toc.title"]}
+		>
+			<p class="toc-title mb-3 text-xs font-semibold tracking-wider uppercase text-muted">
+				{ui["toc.title"]}
+			</p>
+			<ul class="space-y-1.5 text-sm">
+				{toc.map((heading) => {
+					return (
+						<li class:list={[
+							heading.depth === 2 && "pl-0",
+							heading.depth === 3 && "pl-3",
+							heading.depth === 4 && "pl-6",
+						]}>
+							<a
+								class="text-muted hover:text-accent line-clamp-2 border-s-2 border-transparent ps-2 no-underline transition-colors"
+								data-toc-link={heading.slug}
+								href={`#${heading.slug}`}
+							>{heading.text}</a
+							>
+						</li>
+					);
+				})}
+			</ul>
+		</nav>
+	)
+}
+
+
+<script>
+	const scrollSpy = () => {
+		const tocLinks = Array.from(document.querySelectorAll("[data-toc-link]"));
+		if (tocLinks.length === 0) return;
+
+		const headingPairs = tocLinks
+			.map((link) => {
+				const id = link.getAttribute("data-toc-link");
+				if (!id) return null;
+				const heading = document.getElementById(id);
+				return heading ? { heading, link } : null;
+			})
+			.filter((item): item is { heading: HTMLElement; link: Element } => item !== null);
+
+		if (headingPairs.length === 0) return;
+
+		const setActiveLink = (activeLink: Element) => {
+			for (const link of tocLinks) {
+				if (link === activeLink) {
+					link.setAttribute("aria-current", "true");
+				} else {
+					link.removeAttribute("aria-current");
+				}
+			}
+		};
+
+		const update = () => {
+			const offset = 96;
+			let active = headingPairs[0];
+
+			for (const item of headingPairs) {
+				if (item.heading.getBoundingClientRect().top <= offset) {
+					active = item;
+				} else {
+					break;
+				}
+			}
+
+			setActiveLink(active ? active.link : headingPairs[0]!.link);
+		};
+
+		update();
+		document.addEventListener("scroll", update, { passive: true });
+		window.addEventListener("resize", update);
+	};
+
+	scrollSpy();
+</script>

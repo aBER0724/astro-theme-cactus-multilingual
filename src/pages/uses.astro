@@ -1,0 +1,17 @@
+---
+import UsesShowcase from "@/components/UsesShowcase.astro";
+import PageLayout from "@/layouts/Base.astro";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+const meta = {
+	description: ui["uses.description"],
+	title: ui["uses.title"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-12">{ui["uses.title"]}</h1>
+	<UsesShowcase />
+</PageLayout>

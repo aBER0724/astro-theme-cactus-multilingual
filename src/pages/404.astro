@@ -1,0 +1,16 @@
+---
+import PageLayout from "@/layouts/Base.astro";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+const meta = {
+	description: ui["404.title"],
+	title: ui["404.title"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-12">{ui["404.heading"]}</h1>
+	<p class="mb-8">{ui["404.body"]}</p>
+</PageLayout>

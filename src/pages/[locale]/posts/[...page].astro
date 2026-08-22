@@ -1,0 +1,170 @@
+---
+import type { CollectionEntry } from "astro:content";
+import type { GetStaticPaths, Page } from "astro";
+import { Icon } from "astro-icon/components";
+import PostPreview from "@/components/blog/PostPreview.astro";
+import Pagination from "@/components/Paginator.astro";
+import { getAllPosts, getPostsForLocale, getUniqueTags, translationLocales, type Locale } from "@/data/post";
+import PageLayout from "@/layouts/Base.astro";
+import { collectionDateSort } from "@/utils/date";
+import { getUiStrings } from "@/i18n/ui";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const MAX_POSTS_PER_PAGE = 10;
+	const MAX_TAGS = 7;
+	const MAX_PINNED_POSTS = 3;
+
+	const locales = translationLocales;
+	const pages: ReturnType<typeof paginate>[] = [];
+
+	for (const locale of locales) {
+		const posts = (await getPostsForLocale(locale)).map((p) => ({
+			...p.post,
+			// keep original data, but let the translated title/description win
+			// via props below
+		}));
+		const sorted = posts.sort(collectionDateSort);
+		const uniqueTags = getUniqueTags(posts).slice(0, MAX_TAGS);
+		const pinnedPosts = posts.filter((p) => p.data.pinned).slice(0, MAX_PINNED_POSTS);
+		const paged = paginate(sorted, {
+			pageSize: MAX_POSTS_PER_PAGE,
+			params: { locale },
+			props: { locale, uniqueTags, pinnedPosts },
+		});
+		pages.push(...paged);
+	}
+	return pages;
+}) satisfies GetStaticPaths;
+
+interface Props {
+	page: Page<CollectionEntry<"post">>;
+	locale: Locale;
+	uniqueTags: string[];
+	pinnedPosts: CollectionEntry<"post">[];
+}
+
+const { page, locale, uniqueTags, pinnedPosts } = Astro.props;
+const ui = getUiStrings(locale);
+
+const meta = {
+	description: ui["posts.description"],
+	title: ui["posts.title"],
+};
+
+const paginationProps = {
+	...(page.url.prev && {
+		prevUrl: {
+			text: ui["posts.prev"],
+			url: page.url.prev,
+		},
+	}),
+	...(page.url.next && {
+		nextUrl: {
+			text: ui["posts.next"],
+			url: page.url.next,
+		},
+	}),
+};
+
+const translations = new Map(
+	(await getPostsForLocale(locale)).map((p) => [p.post.id, p.trans]),
+);
+
+const groupedByYear = Object.groupBy(page.data, (post) =>
+	post.data.publishDate.getFullYear().toString(),
+);
+const descYearKeys = Object.keys(groupedByYear).sort((a, b) => +b - +a);
+---
+
+<PageLayout meta={meta}>
+	<div class="mb-12 flex items-center gap-3">
+		<h1 class="title">{ui["posts.title"]}</h1>
+		<a class="text-accent" href="/rss.xml" target="_blank">
+			<span class="sr-only">{ui["posts.rss"]}</span>
+			<Icon aria-hidden="true" class="h-6 w-6" focusable="false" name="mdi:rss" />
+		</a>
+	</div>
+	<div class="grid sm:grid-cols-[3fr_1fr] sm:gap-x-8 sm:gap-y-16">
+		<div>
+			{
+				pinnedPosts.length > 0 && (
+					<section class="mb-16">
+						<h2 class="title mb-6 text-xl">{ui["posts.pinned"]}</h2>
+						<ul class="space-y-4" role="list">
+							{pinnedPosts.map((p) => (
+								<li class="grid gap-1 sm:grid-cols-[auto_1fr]">
+									<PostPreview post={p} title={translations.get(p.id)?.data.title} />
+								</li>
+							))}
+						</ul>
+					</section>
+				)
+			}
+			{
+				descYearKeys.map((yearKey) => (
+					<section class="mb-16">
+						<h2 id={`year-${yearKey}`} class="title text-lg">
+							<span class="sr-only">{ui["posts.in"]} </span>
+							{yearKey}
+						</h2>
+						<ul class="mt-5 space-y-4 text-start">
+							{groupedByYear[yearKey]?.map((p) => (
+								<li class="grid gap-1 sm:grid-cols-[auto_1fr] sm:[&_q]:col-start-2">
+									<PostPreview
+										post={p}
+										title={translations.get(p.id)?.data.title}
+										withDesc
+										desc={translations.get(p.id)?.data.description}
+									/>
+								</li>
+							))}
+						</ul>
+					</section>
+				))
+			}
+			<Pagination {...paginationProps} />
+		</div>
+		{
+			!!uniqueTags.length && (
+				<aside>
+					<h2 class="title mb-4 flex items-center gap-1 text-lg">
+						<svg
+							aria-hidden="true"
+							class="h-6 w-6"
+							fill="none"
+							stroke="var(--color-muted)"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="1.5"
+							viewBox="0 0 24 24"
+							xmlns="http://www.w3.org/2000/svg"
+						>
+							<path d="M0 0h24v24H0z" fill="none" stroke="none" />
+							<path d="M7.859 6h-2.834a2.025 2.025 0 0 0 -2.025 2.025v2.834c0 .537 .213 1.052 .593 1.432l6.116 6.116a2.025 2.025 0 0 0 2.864 0l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-6.117 -6.116a2.025 2.025 0 0 0 -1.431 -.593z" />
+							<path d="M17.573 18.407l2.834 -2.834a2.025 2.025 0 0 0 0 -2.864l-7.117 -7.116" />
+							<path d="M6 9h-.01" />
+						</svg>
+						{ui["posts.tags"]}
+					</h2>
+					<ul class="flex flex-wrap gap-2">
+						{uniqueTags.map((tag) => (
+							<li>
+								<a class="cactus-link flex items-center justify-center" href={`/${locale}/tags/${tag}/`}>
+									<span aria-hidden="true">#</span>
+									<span class="sr-only">{ui["posts.tagPostsSr"]}</span>
+									{tag}
+								</a>
+							</li>
+						))}
+					</ul>
+					<span class="mt-4 block sm:text-end">
+						<a class="hover:text-link" href={`/${locale}/tags/`}>
+							{ui["posts.viewAllTags"]} <span aria-hidden="true">→</span>
+							<span class="sr-only">{ui["posts.viewAllTagsSr"]}</span>
+						</a>
+					</span>
+				</aside>
+			)
+		}
+	</div>
+</PageLayout>

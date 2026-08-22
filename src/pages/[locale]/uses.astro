@@ -1,0 +1,24 @@
+---
+import type { GetStaticPaths } from "astro";
+import UsesShowcase from "@/components/UsesShowcase.astro";
+import { getUiStrings } from "@/i18n/ui";
+import PageLayout from "@/layouts/Base.astro";
+import { translationLocales } from "@/data/post";
+
+export const getStaticPaths = (async () => {
+	const locales = translationLocales;
+	return locales.map((locale) => ({ params: { locale }, props: { locale } }));
+}) satisfies GetStaticPaths;
+
+const ui = getUiStrings(Astro.props.locale);
+
+const meta = {
+	description: ui["uses.description"],
+	title: ui["uses.title"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-12">{ui["uses.title"]}</h1>
+	<UsesShowcase />
+</PageLayout>

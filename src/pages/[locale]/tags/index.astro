@@ -1,0 +1,43 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getPostsForLocale, getUniqueTagsWithCount, translationLocales, type Locale } from "@/data/post";
+import PageLayout from "@/layouts/Base.astro";
+import { getUiStrings } from "@/i18n/ui";
+
+export const getStaticPaths = (async () => {
+	const locales = translationLocales;
+	return locales.map((locale) => ({ params: { locale }, props: { locale } }));
+}) satisfies GetStaticPaths;
+
+const { locale } = Astro.props as { locale: Locale };
+const ui = getUiStrings(locale);
+
+const allTags = getUniqueTagsWithCount((await getPostsForLocale(locale)).map((p) => p.post));
+
+const meta = {
+	description: ui["tags.description"],
+	title: ui["tags.title"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-6">{ui["tags.heading"]}</h1>
+	<ul class="space-y-4">
+		{
+			allTags.map(([tag, val]) => (
+				<li class="flex items-center gap-x-2">
+					<a
+						class="cactus-link inline-block"
+						href={`/${locale}/tags/${tag}/`}
+						title={`${ui["tags.viewWithTag"]} ${tag}`}
+					>
+						&#35;{tag}
+					</a>
+					<span class="inline-block">
+						- {val} {ui[val > 1 ? "tags.postCountPlural" : "tags.postCount"]}
+					</span>
+				</li>
+			))
+		}
+	</ul>
+</PageLayout>

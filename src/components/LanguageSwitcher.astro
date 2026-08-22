@@ -1,0 +1,66 @@
+---
+import { getCollection } from "astro:content";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+interface Props {
+	/** id of the source (zh-CN) post, e.g. "my-post" */
+	sourceSlug: string;
+	current: "zh-CN" | "ja" | "en";
+}
+
+const { sourceSlug, current } = Astro.props;
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+const translations = await getCollection("translation");
+const has = (lang: "ja" | "en") =>
+	translations.some(
+		(t) =>
+			t.data.source === `posts/${sourceSlug}` &&
+			t.data.lang === lang &&
+			(!import.meta.env.PROD || !t.data.draft),
+	);
+
+const hasAnyTranslation = has("ja") || has("en");
+if (current === "zh-CN" && !hasAnyTranslation) return;
+
+const langs: {
+	key: "zh-CN" | "ja" | "en";
+	label: string;
+	href: string;
+	available: boolean;
+}[] = [
+	{ key: "zh-CN", label: "中文", href: `/posts/${sourceSlug}/`, available: true },
+	{ key: "ja", label: "日本語", href: `/ja/${sourceSlug}/`, available: has("ja") },
+	{ key: "en", label: "English", href: `/en/${sourceSlug}/`, available: has("en") },
+];
+---
+<div class="text-sm" aria-label={ui["languageSwitcher"]}>
+	<nav class="flex items-center gap-x-2">
+		{
+				langs.filter((l) => l.available).map((l, i) => (
+				<Fragment key={l.key}>
+					{i > 0 && (
+						<span aria-hidden="true" class="text-muted/40 select-none">
+							/
+						</span>
+					)}
+					{l.key === current ? (
+						<span
+							aria-current="page"
+							class="font-semibold text-accent-2 underline decoration-accent decoration-2 underline-offset-4"
+						>
+							{l.label}
+						</span>
+					) : (
+						<a
+							class="text-muted transition-colors duration-150 hover:text-accent-2 hover:underline hover:decoration-accent hover:underline-offset-4 focus-visible:underline focus-visible:decoration-accent focus-visible:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-2"
+							href={l.href}
+						>
+							{l.label}
+						</a>
+					)}
+				</Fragment>
+			))
+		}
+	</nav>
+</div>

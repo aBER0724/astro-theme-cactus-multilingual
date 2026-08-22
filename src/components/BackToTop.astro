@@ -1,0 +1,70 @@
+---
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+---
+
+<back-to-top id="back-to-top">
+	<button
+		class="hover:bg-accent active:scale-95 fixed end-4 bottom-8 z-90 flex h-10 w-10 translate-y-28 cursor-pointer items-center justify-center rounded-md bg-global-text text-global-bg opacity-0 shadow-md transition-all transition-discrete duration-300 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 hover:text-accent-2 sm:bottom-9 sm:end-8 sm:h-11 sm:w-11"
+		data-show="false"
+		id="to-top-btn"
+		type="button"
+	>
+		<span class="sr-only">{ui["backToTop"]}</span>
+		<svg
+			aria-hidden="true"
+			class="h-5 w-5"
+			fill="none"
+			focusable="false"
+			stroke="currentColor"
+			stroke-width="2"
+			viewBox="0 0 24 24"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path d="M4.5 15.75l7.5-7.5 7.5 7.5" stroke-linecap="round" stroke-linejoin="round"></path>
+		</svg>
+	</button>
+</back-to-top>
+
+<script>
+	// Vertical distance (px) from the top after which the button becomes visible.
+	const SHOW_THRESHOLD = 400;
+
+	class BackToTop extends HTMLElement {
+		#button: HTMLButtonElement | null = null;
+
+		#update = () => {
+			if (this.#button) {
+				this.#button.dataset.show = String(window.scrollY > SHOW_THRESHOLD);
+			}
+		};
+
+		#scrollToTop = () => {
+			document.documentElement.scrollTo({ behavior: "smooth", top: 0 });
+		};
+
+		connectedCallback() {
+			this.#button = this.querySelector<HTMLButtonElement>("button");
+			this.#button?.addEventListener("click", this.#scrollToTop);
+			// Re-evaluate after client-side view transitions, where scroll
+			// position resets but no scroll event is fired.
+			window.addEventListener("scroll", this.#update, { passive: true });
+			window.addEventListener("resize", this.#update);
+			this.#update();
+		}
+
+		disconnectedCallback() {
+			this.#button?.removeEventListener("click", this.#scrollToTop);
+			window.removeEventListener("scroll", this.#update);
+			window.removeEventListener("resize", this.#update);
+			this.#button = null;
+		}
+	}
+
+	// Guard against re-definition when Astro re-executes page scripts after a
+	// view-transition navigation; the new page's element is auto-upgraded.
+	if (!customElements.get("back-to-top")) {
+		customElements.define("back-to-top", BackToTop);
+	}
+</script>

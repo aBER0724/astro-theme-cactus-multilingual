@@ -1,0 +1,58 @@
+{/* Inlined to avoid FOUC (parser-blocking). Applies theme on load and re-applies it after every client-side view-transition navigation via astro:page-load. */}
+<script is:inline>
+	const lightModePref = window.matchMedia("(prefers-color-scheme: light)");
+
+	function getUserPref() {
+		const storedTheme = typeof localStorage !== "undefined" && localStorage.getItem("theme");
+		return storedTheme || (lightModePref.matches ? "light" : "dark");
+	}
+
+	function setTheme(newTheme) {
+		if (newTheme !== "light" && newTheme !== "dark") {
+			return console.warn(
+				`Invalid theme value '${newTheme}' received. Expected 'light' or 'dark'.`,
+			);
+		}
+
+		const root = document.documentElement;
+
+		// root already set to newTheme, exit early
+		if (newTheme === root.getAttribute("data-theme")) {
+			return;
+		}
+
+		root.setAttribute("data-theme", newTheme);
+
+		if (typeof localStorage !== "undefined") {
+			localStorage.setItem("theme", newTheme);
+		}
+	}
+
+	// initial setup
+	setTheme(getUserPref());
+
+	// re-apply theme after every client-side navigation (astro:page-load fires on initial load and after each view transition)
+	// Keep data-theme through view-transition swaps: the server-rendered <html> has no data-theme, so Astro's
+	// swapRootAttributes would overwrite the current theme and drop the page to light for a frame before
+	// astro:page-load re-applies it. Copy the theme onto the incoming document before the default swap runs.
+	document.addEventListener("astro:before-swap", (e) => {
+		const savedTheme = document.documentElement.getAttribute("data-theme");
+		if (savedTheme) e.newDocument.documentElement.setAttribute("data-theme", savedTheme);
+	});
+	document.addEventListener("astro:page-load", () => setTheme(getUserPref()));
+
+	// listen for pageshow event, browser restored page from bfcache
+	window.addEventListener("pageshow", (e) => {
+		if (e.persisted) {
+			setTheme(getUserPref());
+		}
+	});
+
+	// listen for theme-change custom event, fired in src/components/ThemeToggle.astro
+	document.addEventListener("theme-change", (e) => {
+		setTheme(e.detail.theme);
+	});
+
+	// listen for prefers-color-scheme change.
+	lightModePref.addEventListener("change", (e) => setTheme(e.matches ? "light" : "dark"));
+</script>

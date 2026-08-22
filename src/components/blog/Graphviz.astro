@@ -1,0 +1,58 @@
+---
+interface Props {
+	// no props needed — the script scans the DOM for <pre class="graphviz">
+}
+---
+
+<!--
+  Client-side Graphviz renderer for ```dot / ```graphviz blocks.
+
+  `satteriGraphvizPlugin` compiles them into <pre class="graphviz">, bypassing
+  expressive-code. This script lazily imports @viz-js/viz (WASM) and renders any
+  .graphviz blocks on the page.
+
+  Hooks into `astro:page-load` (initial load + every view transition) so diagrams
+  render correctly under Astro View Transitions.
+-->
+<script>
+	type VizInstance = Awaited<ReturnType<(typeof import("@viz-js/viz"))["instance"]>>;
+	let vizPromise: Promise<VizInstance> | null = null;
+
+	async function getViz() {
+		vizPromise ??= import("@viz-js/viz").then((m) => m.instance());
+		return vizPromise;
+	}
+
+	async function renderBlock(block: HTMLElement) {
+		if (block.dataset.rendered === "true") return;
+		if (block.dataset.source === undefined) {
+			block.dataset.source = block.textContent ?? "";
+		}
+		const source = block.dataset.source;
+		if (!source) return;
+
+		const viz = await getViz();
+
+		try {
+			// SVG output already includes the correct width/height + viewBox.
+			const svg = viz.renderString(source, { format: "svg", engine: "dot" });
+			block.innerHTML = svg;
+			block.dataset.rendered = "true";
+		} catch (err) {
+			delete block.dataset.rendered;
+			console.warn("[graphviz] failed to render diagram:", err);
+		}
+	}
+
+	async function renderAll() {
+		const blocks = Array.from(
+			document.querySelectorAll<HTMLElement>("pre.graphviz"),
+		);
+		for (const block of blocks) {
+			await renderBlock(block);
+		}
+	}
+
+	document.addEventListener("astro:page-load", () => renderAll());
+	window.addEventListener("pageshow", () => renderAll());
+</script>

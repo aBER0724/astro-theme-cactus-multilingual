@@ -1,0 +1,17 @@
+---
+import type { HTMLAttributes } from "astro/types";
+import { getFormattedDate } from "@/utils/date";
+import { uiLanguageFromPath } from "@/i18n/ui";
+
+type Props = HTMLAttributes<"time"> & {
+	date: Date;
+	dateTimeOptions?: Intl.DateTimeFormatOptions;
+};
+
+const { date, dateTimeOptions, ...attrs } = Astro.props;
+
+const postDate = getFormattedDate(date, dateTimeOptions, uiLanguageFromPath(Astro.url.pathname));
+const ISO = date.toISOString();
+---
+
+<time datetime={ISO} title={ISO} {...attrs}>{postDate}</time>

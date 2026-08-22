@@ -1,0 +1,178 @@
+---
+import { getCollection } from "astro:content";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+type LangKey = "zh-CN" | "ja" | "en";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+// Language switching only exists for article pages (translated posts).
+// On any other page we render nothing so the header button area stays clean.
+// Paths that are real pages (not article slugs) under /posts/ or /en|ja//.
+const RESERVED = new Set(["about", "uses", "posts", "notes", "tags"]);
+
+const path = Astro.url.pathname.replace(/\/$/, "");
+const zhMatch = path.match(/^\/posts\/([^/]+)$/);
+const transMatch = path.match(/^\/(en|ja)\/([^/]+)$/);
+const isReserved = transMatch
+	? RESERVED.has(transMatch[2])
+	: zhMatch
+		? RESERVED.has(zhMatch[1])
+		: false;
+
+let slug: string | undefined;
+let current: LangKey;
+let langs: { key: LangKey; label: string; href: string; available: boolean }[];
+
+if (!isReserved && (zhMatch || transMatch)) {
+	// Article page: switch between translated versions of this post.
+	if (zhMatch) {
+		slug = zhMatch[1];
+		current = "zh-CN";
+	} else {
+		slug = transMatch![2];
+		current = transMatch![1] === "ja" ? "ja" : "en";
+	}
+
+	const translations = await getCollection("translation");
+	const has = (lang: "ja" | "en") =>
+		translations.some(
+			(t) =>
+				t.data.source === `posts/${slug}` &&
+				t.data.lang === lang &&
+				(!import.meta.env.PROD || !t.data.draft),
+		);
+
+	langs = [
+		{ key: "zh-CN", label: "中文", href: `/posts/${slug}/`, available: true },
+		{ key: "ja", label: "日本語", href: `/ja/${slug}/`, available: has("ja") },
+		{ key: "en", label: "English", href: `/en/${slug}/`, available: has("en") },
+	];
+} else {
+	// Non-article page: switch to this page's translated version when one
+	// exists (about / uses), otherwise to the matching language homepage.
+	const rawPath = Astro.url.pathname;
+	const seg = rawPath.match(/^\/(en|ja)(?:\/|$)/)?.[1];
+	const rest = rawPath.replace(/^\/(en|ja)\/?/, "").replace(/^\/|\/$/g, ""); // "about" | "uses" | "tags/markdown" | ""
+	const translatablePages = new Set(["about", "uses", "posts", "notes", "tags"]);
+
+	current = seg === "ja" ? "ja" : seg === "en" ? "en" : "zh-CN";
+
+	// Same-page translation switch for list & detail pages that exist in all
+	// three languages (about/uses/posts/notes/tags, including tag detail pages).
+	const target = translatablePages.has(rest)
+		? rest
+		: rest.startsWith("tags/")
+			? rest
+			: null;
+
+	langs = target
+		? [
+				{ key: "zh-CN", label: "中文", href: `/${target}/`, available: true },
+				{ key: "ja", label: "日本語", href: `/ja/${target}/`, available: true },
+				{ key: "en", label: "English", href: `/en/${target}/`, available: true },
+			]
+		: [
+				{ key: "zh-CN", label: "中文", href: "/", available: true },
+				{ key: "ja", label: "日本語", href: "/ja/", available: true },
+				{ key: "en", label: "English", href: "/en/", available: true },
+			];
+}
+
+const currentLabel = langs.find((l) => l.key === current)?.label;
+---
+
+<locale-nav class="relative ms-2">
+	<button
+		aria-expanded="false"
+		aria-haspopup="menu"
+		aria-label={`${ui["languageSwitcher"]} · ${currentLabel}`}
+		class="flex h-9 w-9 cursor-pointer items-center justify-center rounded transition-colors duration-150 hover:text-accent-2"
+		type="button"
+	>
+		<span class="sr-only">{currentLabel}</span>
+		<svg
+			aria-hidden="true"
+			class="h-8 w-8"
+			fill="none"
+			focusable="false"
+			stroke="currentColor"
+			stroke-linecap="round"
+			stroke-linejoin="round"
+			stroke-width="1.25"
+			viewBox="0 0 24 24"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"></path>
+			<path d="M3.6 9h16.8"></path>
+			<path d="M3.6 15h16.8"></path>
+			<path d="M12 3a17 17 0 0 1 0 18"></path>
+			<path d="M12 3a17 17 0 0 0 0 18"></path>
+		</svg>
+	</button>
+	<div
+		role="menu"
+		class="bg-global-bg absolute end-0 top-full z-50 mt-1 min-w-28 rounded-md border border-global-text/10 p-1 shadow-lg"
+		hidden
+	>
+		{
+			langs.map((l) =>
+				l.key === current ? (
+					<span
+						aria-current="true"
+						class="text-accent-2 block cursor-default rounded px-2 py-1 text-xs font-semibold"
+						role="menuitem"
+					>
+						{l.label}
+					</span>
+				) : l.available ? (
+					<a
+						class="text-muted block rounded px-2 py-1 text-xs transition-colors duration-150 hover:bg-global-text/10 hover:text-accent-2"
+						href={l.href}
+						role="menuitem"
+					>
+						{l.label}
+					</a>
+				) : (
+					<span
+						aria-disabled="true"
+						class="text-muted/40 block cursor-not-allowed rounded px-2 py-1 text-xs"
+						role="menuitem"
+					>
+						{l.label}
+					</span>
+				),
+			)
+		}
+	</div>
+</locale-nav>
+
+<script>
+	class LocaleNav extends HTMLElement {
+		connectedCallback() {
+			const btn = this.querySelector<HTMLButtonElement>("button");
+			const menu = this.querySelector<HTMLElement>("[role='menu']");
+			if (!btn || !menu) return;
+
+			const close = () => {
+				menu.hidden = true;
+				btn.setAttribute("aria-expanded", "false");
+			};
+			const toggle = () => {
+				const open = menu.hidden;
+				menu.hidden = !open;
+				btn.setAttribute("aria-expanded", String(open));
+			};
+
+			btn.addEventListener("click", toggle);
+			document.addEventListener("click", (e) => {
+				if (!this.contains(e.target as Node)) close();
+			});
+			document.addEventListener("keydown", (e) => {
+				if (e.key === "Escape" && !menu.hidden) close();
+			});
+		}
+	}
+
+	if (!customElements.get("locale-nav")) customElements.define("locale-nav", LocaleNav);
+</script>

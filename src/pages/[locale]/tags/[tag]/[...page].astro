@@ -1,0 +1,91 @@
+---
+import { render } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import PostPreview from "@/components/blog/PostPreview.astro";
+import Pagination from "@/components/Paginator.astro";
+import { getAllPosts, getPostsForLocale, getTagMeta, getUniqueTags, translationLocales, type Locale } from "@/data/post";
+import { getUiStrings } from "@/i18n/ui";
+import PageLayout from "@/layouts/Base.astro";
+import { collectionDateSort } from "@/utils/date";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const locales = translationLocales;
+	const allPosts = await getAllPosts();
+	const sortedPosts = allPosts.sort(collectionDateSort);
+	const uniqueTags = getUniqueTags(sortedPosts);
+
+	const pages = [];
+	for (const locale of locales) {
+		const posts = (await getPostsForLocale(locale)).map((p) => p.post);
+		const sortable = allPosts.filter((p) => posts.some((x) => x.id === p.id));
+
+		for (const tag of uniqueTags) {
+			const postsWithTag = sortable.filter((p) => p.data.tags.includes(tag));
+			if (postsWithTag.length === 0) continue;
+			pages.push(
+				...paginate(postsWithTag, {
+					pageSize: 10,
+					params: { tag, locale },
+					props: { locale },
+				}),
+			);
+		}
+	}
+	return pages;
+}) satisfies GetStaticPaths;
+
+interface Props {
+	locale: Locale;
+	page: {
+		url: { prev?: string; next?: string };
+		data: { id: string }[];
+	};
+}
+
+const { page, locale } = Astro.props;
+const { tag } = Astro.params;
+const tagMeta = await getTagMeta(tag);
+const ui = getUiStrings(locale);
+
+const transBySlug = new Map((await getPostsForLocale(locale)).map((p) => [p.post.id, p.trans]));
+
+const TagContent = tagMeta ? (await render(tagMeta)).Content : null;
+
+const meta = {
+	description: tagMeta?.data.description ?? `${ui["tags.metaDesc"]} ${tag}`,
+	title: tagMeta?.data.title ?? `${ui["tags.metaTitle"]} ${tag}`,
+};
+
+const paginationProps = {
+	...(page.url.prev && {
+		prevUrl: {
+			text: ui["tags.prev"],
+			url: page.url.prev,
+		},
+	}),
+	...(page.url.next && {
+		nextUrl: {
+			text: ui["tags.next"],
+			url: page.url.next,
+		},
+	}),
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title capitalize">{tagMeta?.data.title ?? `${ui["tags.metaTitle"]} ${tag}`}</h1>
+	<div class="prose prose-sm prose-cactus mb-16 max-w-none">
+		{tagMeta?.data.description && <p>{tagMeta.data.description}</p>}
+		{TagContent && <TagContent />}
+	</div>
+	<ul class="space-y-4">
+		{
+			page.data.map((p) => (
+				<li class="grid gap-1 sm:grid-cols-[auto_1fr]">
+					<PostPreview as="h2" post={p} title={transBySlug.get(p.id)?.data.title} />
+				</li>
+			))
+		}
+	</ul>
+	<Pagination {...paginationProps} />
+</PageLayout>

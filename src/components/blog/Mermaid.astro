@@ -1,0 +1,79 @@
+---
+interface Props {
+	// no props needed — the script scans the DOM for <pre class="mermaid">
+}
+---
+
+<!--
+  Client-side Mermaid renderer.
+
+  `satteriMermaidPlugin` compiles ```mermaid blocks into <pre class="mermaid">,
+  so they bypass expressive-code. This script lazily imports the mermaid library
+  and renders any .mermaid blocks on the page.
+
+  Because the site uses Astro View Transitions, we hook into `astro:page-load`
+  (fires on first load AND after every navigation). Theme changes re-render the
+  diagrams from the saved source via mermaid.render() so they follow dark mode.
+-->
+<script>
+	let mermaidPromise: Promise<typeof import("mermaid")> | null = null;
+
+	function currentTheme() {
+		return document.documentElement.getAttribute("data-theme") === "dark"
+			? "dark"
+			: "default";
+	}
+
+	async function renderBlock(block: HTMLElement, force = false) {
+		const alreadyRendered = block.dataset.rendered === "true";
+		if (alreadyRendered && !force) return;
+
+		// Keep the raw source for re-rendering on theme change.
+		if (block.dataset.source === undefined) {
+			block.dataset.source = block.textContent ?? "";
+		}
+
+		const source = block.dataset.source;
+		if (!source) return;
+
+		// Unique id per render so re-renders never collide with earlier SVGs.
+		const uid = `mermaid-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+
+		mermaidPromise ??= import("mermaid");
+		const { default: mermaid } = await mermaidPromise;
+
+		mermaid.initialize({
+			startOnLoad: false,
+			securityLevel: "strict",
+			theme: currentTheme(),
+			fontFamily: "inherit",
+		});
+
+		try {
+			const { svg } = await mermaid.render(uid, source);
+			block.innerHTML = svg;
+			block.dataset.rendered = "true";
+		} catch (err) {
+			delete block.dataset.rendered;
+			console.warn("[mermaid] failed to render diagram:", err);
+		}
+	}
+
+	async function renderAll(force = false) {
+		const blocks = Array.from(document.querySelectorAll<HTMLElement>("pre.mermaid"));
+		if (blocks.length === 0) return;
+		// Render sequentially; mermaid is not built for parallel renders of many blocks.
+		for (const block of blocks) {
+			await renderBlock(block, force);
+		}
+	}
+
+	// Runs once on initial load and after each view transition.
+	document.addEventListener("astro:page-load", () => renderAll());
+
+	// Re-render when the theme changes so diagrams follow light/dark mode.
+	document.addEventListener("theme-change", () => renderAll(true));
+
+	// Tidy up / re-render when returning from bfcache.
+	window.addEventListener("pageshow", () => renderAll(true));
+</script>

@@ -1,0 +1,85 @@
+---
+import { type CollectionEntry, getCollection } from "astro:content";
+import PostPreview from "@/components/blog/PostPreview.astro";
+import Note from "@/components/note/Note.astro";
+import SocialList from "@/components/SocialList.astro";
+import { getAllPosts } from "@/data/post";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+import PageLayout from "@/layouts/Base.astro";
+import { collectionDateSort } from "@/utils/date";
+
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+
+// Posts
+const MAX_POSTS = 10;
+const allPosts = await getAllPosts();
+const allPostsByDate = allPosts.sort(collectionDateSort) as CollectionEntry<"post">[];
+const latestPosts = allPostsByDate.slice(0, MAX_POSTS);
+
+// Pinned Posts, set to a max of 3;
+const MAX_PINNED_POSTS = 3;
+const pinnedPosts = allPostsByDate
+	.values()
+	.filter((p) => p.data.pinned)
+	.take(MAX_PINNED_POSTS)
+	.toArray();
+
+// Notes, set to a max of 5
+const MAX_NOTES = 5;
+const allNotes = await getCollection("note");
+const latestNotes = allNotes
+	.sort(collectionDateSort)
+	.slice(0, MAX_NOTES) as CollectionEntry<"note">[];
+---
+
+<PageLayout meta={{ title: ui["home.title"] }}>
+	<section>
+		<h1 class="title mb-12">{ui["home.greeting"]}</h1>
+		<p class="mb-4">
+			{ui["home.intro"]}
+		</p>
+		<SocialList />
+	</section>
+	{
+		pinnedPosts.length > 0 && (
+			<section class="mt-16">
+				<h2 class="title mb-6 text-xl">{ui["home.pinnedPosts"]}</h2>
+				<ul class="space-y-4" role="list">
+					{pinnedPosts.map((p) => (
+						<li class="grid gap-1 sm:grid-cols-[auto_1fr]">
+							<PostPreview post={p} />
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+	<section class="mt-16">
+		<h2 class="title text-accent mb-6 text-xl"><a href="/posts/">{ui["home.posts"]}</a></h2>
+		<ul class="space-y-4" role="list">
+			{
+				latestPosts.map((p) => (
+					<li class="grid gap-1 sm:grid-cols-[auto_1fr]">
+						<PostPreview post={p} />
+					</li>
+				))
+			}
+		</ul>
+	</section>
+	{
+		latestNotes.length > 0 && (
+			<section class="mt-16">
+				<h2 class="title text-accent mb-6 text-xl">
+					<a href="/notes/">{ui["home.notes"]}</a>
+				</h2>
+				<ul class="space-y-6" role="list">
+					{latestNotes.map((note) => (
+						<li>
+							<Note note={note} as="h3" isPreview />
+						</li>
+					))}
+				</ul>
+			</section>
+		)
+	}
+</PageLayout>

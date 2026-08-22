@@ -1,0 +1,16 @@
+---
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+import { siteConfig } from "@/site.config";
+
+const year = new Date().getFullYear();
+const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
+---
+
+<footer
+	class="text-muted mt-auto flex w-full flex-col items-center justify-center gap-y-2 pt-20 pb-4 text-center align-top font-semibold sm:flex-row sm:justify-between sm:text-xs"
+>
+	<div class="me-0 sm:me-4">
+		&copy; {siteConfig.title}
+		&nbsp;{year}.<span class="inline-block" set:html={ui["footer.poweredBy"]} />
+	</div>
+</footer>

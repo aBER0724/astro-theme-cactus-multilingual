@@ -1,0 +1,59 @@
+{
+  "en": {
+    "description": "Placeholder /uses page. Replace these sample entries with your own gear in src/data/uses.json.",
+    "sections": [
+      {
+        "kicker": "Example",
+        "title": "Example",
+        "items": [
+          {
+            "title": "Your laptop",
+            "subtitle": "Computer",
+            "description": "Replace with your machine.",
+            "href": "https://example.com/"
+          },
+          {
+            "title": "Your editor",
+            "subtitle": "Editor",
+            "description": "Replace with your editor of choice.",
+            "href": "https://example.com/"
+          },
+          {
+            "title": "Your keyboard",
+            "subtitle": "Keyboard",
+            "description": "Replace with your daily driver.",
+            "href": "https://example.com/"
+          }
+        ]
+      }
+    ]
+  },
+  "zh": {
+    "description": "占位的 /uses 页面。在 src/data/uses.json 中把这些示例条目替换成你自己的装备。",
+    "sections": [
+      {
+        "kicker": "示例",
+        "title": "示例",
+        "items": [
+          { "title": "你的笔记本电脑", "subtitle": "电脑", "description": "替换成你的机器。", "href": "https://example.com/" },
+          { "title": "你的编辑器", "subtitle": "编辑器", "description": "替换成你常用的编辑器。", "href": "https://example.com/" },
+          { "title": "你的键盘", "subtitle": "键盘", "description": "替换成你的日常键盘。", "href": "https://example.com/" }
+        ]
+      }
+    ]
+  },
+  "ja": {
+    "description": "プレースホルダーの /uses ページ。src/data/uses.json のサンプル項目を自分の環境に置き換えてください。",
+    "sections": [
+      {
+        "kicker": "例",
+        "title": "例",
+        "items": [
+          { "title": "あなたのノートPC", "subtitle": "パソコン", "description": "あなたのマシンに置き換えてください。", "href": "https://example.com/" },
+          { "title": "あなたのエディタ", "subtitle": "エディタ", "description": "お気に入りのエディタをどうぞ。", "href": "https://example.com/" },
+          { "title": "あなたのキーボード", "subtitle": "キーボード", "description": "普段使いのキーボードをどうぞ。", "href": "https://example.com/" }
+        ]
+      }
+    ]
+  }
+}

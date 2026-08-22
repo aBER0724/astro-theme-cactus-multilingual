@@ -1,0 +1,28 @@
+---
+import type { CollectionEntry } from "astro:content";
+import type { HTMLTag, Polymorphic } from "astro/types";
+import FormattedDate from "@/components/FormattedDate.astro";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+
+type Props<Tag extends HTMLTag> = Polymorphic<{ as: Tag }> & {
+	post: CollectionEntry<"post">;
+	withDesc?: boolean;
+	title?: string;
+	desc?: string;
+};
+
+const { as: Tag = "div", post, withDesc = false, title, desc } = Astro.props;
+const locale = uiLanguageFromPath(Astro.url.pathname);
+const ui = getUiStrings(locale);
+// Link to the translated version when rendering inside /en/ or /ja/.
+const href = locale === "zh" ? `/posts/${post.id}/` : `/${locale}/${post.id}/`;
+---
+
+<FormattedDate class="text-muted min-w-30 font-semibold" date={post.data.publishDate} />
+<Tag>
+	{post.data.draft && <span class="text-red-500">{ui["post.draft"]} </span>}
+	<a class="cactus-link" href={href}>
+		{title ?? post.data.title}
+	</a>
+</Tag>
+{withDesc && <q class="line-clamp-3 italic">{desc ?? post.data.description}</q>}
