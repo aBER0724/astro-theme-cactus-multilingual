@@ -2,6 +2,7 @@
 	"name": "astro-theme-cactus-multilingual",
 	"type": "module",
 	"version": "8.2.0",
+	"packageManager": "pnpm@10.11.1",
 	"private": false,
 	"engines": {
 		"node": ">=20.19"
