@@ -1,0 +1,34 @@
+---
+import ProjectCard from "@/components/project/ProjectCard.astro";
+import { getAllPosts } from "@/data/post";
+import { getAllProjects } from "@/data/project";
+import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
+import PageLayout from "@/layouts/Base.astro";
+import { collectionDateSort } from "@/utils/date";
+
+const locale = uiLanguageFromPath(Astro.url.pathname);
+const ui = getUiStrings(locale);
+const projects = await getAllProjects();
+const posts = (await getAllPosts()).sort(collectionDateSort);
+
+const meta = {
+	title: ui["projects.title"],
+	description: ui["projects.description"],
+};
+---
+
+<PageLayout meta={meta}>
+	<h1 class="title mb-3">{ui["projects.title"]}</h1>
+	<p class="text-muted mb-12">{ui["projects.description"]}</p>
+	<div class="space-y-12">
+		{
+			projects.map((project) => (
+				<ProjectCard
+					locale={locale}
+					posts={posts.filter((post) => post.data.tags.includes(project.data.name))}
+					project={project}
+				/>
+			))
+		}
+	</div>
+</PageLayout>

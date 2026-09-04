@@ -57,6 +57,18 @@ const note = defineCollection({
 	}),
 });
 
+const project = defineCollection({
+	loader: glob({ base: "./content/projects", pattern: "**/*.{md,mdx}" }),
+	schema: z.object({
+		name: z.string().min(1).max(60).transform((name) => name.toLowerCase()),
+		description: z.string().max(300),
+		startDate: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+		repository: z.url(),
+		techStack: z.array(z.string().min(1)).min(1),
+		pinned: z.boolean().default(false),
+	}),
+});
+
 const tag = defineCollection({
 	loader: glob({ base: "./content/tags", pattern: "**/*.{md,mdx}" }),
 	schema: z.object({
@@ -78,4 +90,4 @@ const translation = defineCollection({
 		}),
 });
 
-export const collections = { post, note, tag, translation };
+export const collections = { post, note, project, tag, translation };

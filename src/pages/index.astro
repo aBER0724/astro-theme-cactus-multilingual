@@ -2,14 +2,17 @@
 import { type CollectionEntry, getCollection } from "astro:content";
 import PostPreview from "@/components/blog/PostPreview.astro";
 import Note from "@/components/note/Note.astro";
+import PinnedProjects from "@/components/project/PinnedProjects.astro";
 import SocialList from "@/components/SocialList.astro";
 import { getAllPosts } from "@/data/post";
+import { getAllProjects } from "@/data/project";
 import { getUiStrings, uiLanguageFromPath } from "@/i18n/ui";
 import PageLayout from "@/layouts/Base.astro";
 import { collectionDateSort } from "@/utils/date";
 
 const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 
+const projects = await getAllProjects();
 // Posts
 const MAX_POSTS = 10;
 const allPosts = await getAllPosts();
@@ -35,7 +38,7 @@ const latestNotes = allNotes
 <PageLayout meta={{ title: ui["home.title"] }}>
 	<section>
 		<h1 class="title mb-12">{ui["home.greeting"]}</h1>
-		<p class="mb-4">
+		<p class="mb-4 leading-6">
 			{ui["home.intro"]}
 		</p>
 		<SocialList />
@@ -82,4 +85,7 @@ const latestNotes = allNotes
 			</section>
 		)
 	}
+	<div class="mt-16">
+		<PinnedProjects locale="zh" projects={projects} />
+	</div>
 </PageLayout>

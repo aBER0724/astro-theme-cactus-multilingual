@@ -9,7 +9,7 @@ const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 // Language switching only exists for article pages (translated posts).
 // On any other page we render nothing so the header button area stays clean.
 // Paths that are real pages (not article slugs) under /posts/ or /en|ja//.
-const RESERVED = new Set(["about", "uses", "posts", "notes", "tags"]);
+const RESERVED = new Set(["about", "uses", "posts", "notes", "projects", "tags"]);
 
 const path = Astro.url.pathname.replace(/\/$/, "");
 const zhMatch = path.match(/^\/posts\/([^/]+)$/);
@@ -54,7 +54,7 @@ if (!isReserved && (zhMatch || transMatch)) {
 	const rawPath = Astro.url.pathname;
 	const seg = rawPath.match(/^\/(en|ja)(?:\/|$)/)?.[1];
 	const rest = rawPath.replace(/^\/(en|ja)\/?/, "").replace(/^\/|\/$/g, ""); // "about" | "uses" | "tags/markdown" | ""
-	const translatablePages = new Set(["about", "uses", "posts", "notes", "tags"]);
+	const translatablePages = new Set(["about", "uses", "posts", "notes", "projects", "tags"]);
 
 	current = seg === "ja" ? "ja" : seg === "en" ? "en" : "zh-CN";
 

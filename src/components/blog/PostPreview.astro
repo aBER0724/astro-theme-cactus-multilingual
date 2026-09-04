@@ -20,9 +20,9 @@ const href = locale === "zh" ? `/posts/${post.id}/` : `/${locale}/${post.id}/`;
 
 <FormattedDate class="text-muted min-w-30 font-semibold" date={post.data.publishDate} />
 <Tag>
-	{post.data.draft && <span class="text-red-500">{ui["post.draft"]} </span>}
 	<a class="cactus-link" href={href}>
 		{title ?? post.data.title}
 	</a>
+	{post.data.draft && <span class="ms-2 text-red-500">{ui["post.draft"]}</span>}
 </Tag>
 {withDesc && <q class="line-clamp-3 italic">{desc ?? post.data.description}</q>}
