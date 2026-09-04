@@ -79,8 +79,10 @@ const tag = defineCollection({
 
 // Auto-generated translations (scripts/translate.mjs): each file lives at content/translations/<lang>/<source-slug>.md
 // and points back to its source post via `source` (e.g. "posts/my-post").
+// Pattern is intentionally one level deep so project translations
+// (content/translations/<lang>/projects/…) are handled by their own collection.
 const translation = defineCollection({
-	loader: glob({ base: "./content/translations", pattern: "**/*.{md,mdx}" }),
+	loader: glob({ base: "./content/translations", pattern: "*/*.{md,mdx}" }),
 	schema: ({ image }) =>
 		postFields(image).extend({
 			// Target languages written by scripts/translate.mjs, from site.config.ts
@@ -90,4 +92,18 @@ const translation = defineCollection({
 		}),
 });
 
-export const collections = { post, note, project, tag, translation };
+// Localized project metadata (scripts/translate.mjs): each file lives at
+// content/translations/<lang>/projects/<project-slug>.md and carries the
+// translated description; everything else (name, repo, tech stack, dates)
+// stays shared in the project entry itself.
+const projectTranslation = defineCollection({
+	loader: glob({ base: "./content/translations", pattern: "*/projects/*.{md,mdx}" }),
+	schema: z.object({
+		description: z.string().max(300),
+		lang: z.enum(i18nConfig.translateTo),
+		source: z.string().optional(),
+		sourceHash: z.string().optional(),
+	}),
+});
+
+export const collections = { post, note, project, tag, translation, projectTranslation };

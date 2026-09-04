@@ -17,8 +17,10 @@
  *   (src/site.config.ts)  >  built-in default ["ja", "en"]
  *
  * Behaviour:
- *   - Scans content/posts/** for posts whose `lang` is zh-CN/zh (or unset).
- *   - Writes translations to content/translations/<lang>/<slug>.md, committed to git.
+ *   - Scans content/posts/** for posts whose `lang` is zh-CN/zh (or unset),
+ *     and content/projects/** for project descriptions.
+ *   - Writes translations to content/translations/<lang>/<slug>.md (posts)
+ *     and content/translations/<lang>/projects/<slug>.md (projects).
  *   - Incremental: skips posts whose translation sourceHash already matches,
  *     pass --force to re-translate everything.
  *   - --dry prints what would be done without calling the API.
@@ -32,6 +34,7 @@ import * as yaml from "js-yaml";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const POSTS_DIR = join(ROOT, "content", "posts");
+const PROJECTS_DIR = join(ROOT, "content", "projects");
 const TRANS_DIR = join(ROOT, "content", "translations");
 
 /* ---------------- .env fallback (so `node scripts/translate.mjs` also works) ---------------- */
@@ -169,6 +172,15 @@ async function translateMeta(title, description, lang) {
 	}
 }
 
+async function translateDescription(description, lang) {
+	const system = `You are a professional translator. Translate the short project description of a developer's portfolio from Simplified Chinese into ${LANG_NAMES[lang]}. Return ONLY the translated description text — no quotes, no explanations. Preserve proper nouns, project names, and technology names as-is.`;
+	const user = description;
+	return chat([
+		{ role: "system", content: system },
+		{ role: "user", content: user },
+	]);
+}
+
 async function translateBody(body, lang) {
 	const system = `You are a professional translator. Translate the following Markdown blog post from Simplified Chinese into ${LANG_NAMES[lang]}. Preserve ALL Markdown syntax, headings, lists, links, images, inline code and code blocks exactly. Do NOT translate code, URLs, or filenames. Keep the frontmatter out — translate only the body. Output ONLY the translated Markdown with no preamble or code fences.`;
 	const user = body;
@@ -193,8 +205,14 @@ for (const srcPath of sources) {
 	const srcRaw = readFileSync(srcPath, "utf8");
 	const { data, body } = splitFrontmatter(srcRaw);
 	const lang = data.lang ?? "zh-CN";
-	if (!["zh-CN", "zh"].includes(lang)) {
-		console.log(`skip   ${srcPath} (lang=${lang}, not Simplified Chinese)`);
+	if (!data.lang || ["zh-CN", "zh"].includes(data.lang)) {
+		// Never translate unpublished work-in-progress posts.
+		if (data.draft === true) {
+			console.log(`skip   ${srcPath} (draft)`);
+			continue;
+		}
+	} else {
+		console.log(`skip   ${srcPath} (lang=${data.lang}, not Simplified Chinese)`);
 		continue;
 	}
 
@@ -249,6 +267,59 @@ for (const srcPath of sources) {
 			done++;
 		} catch (err) {
 			console.error(`error  [${target}] ${rel}: ${err.message}`);
+			failed++;
+		}
+	}
+}
+
+/* ---------------- projects ----------------
+ * Project records only need their `description` localized; everything else
+ * (name, repository, tech stack, dates) is language-neutral. Translations
+ * land at content/translations/<lang>/projects/<slug>.md and are picked up
+ * by the `projectTranslation` content collection. */
+const projectSources = walk(PROJECTS_DIR);
+for (const srcPath of projectSources) {
+	const srcRaw = readFileSync(srcPath, "utf8");
+	const { data } = splitFrontmatter(srcRaw);
+	if (!data.description) continue;
+
+	const rel = srcPath.slice(PROJECTS_DIR.length + 1);
+	const ext = extname(rel);
+	const slug = rel.slice(0, -ext.length);
+	const hash = sha256(srcRaw);
+
+	for (const target of TARGETS) {
+		if (!LANG_NAMES[target]) continue;
+		const outPath = join(TRANS_DIR, target, "projects", `${slug}${ext}`);
+		const existingRaw = existsSync(outPath) ? readFileSync(outPath, "utf8") : null;
+		const existingHash = existingRaw ? splitFrontmatter(existingRaw).data.sourceHash : null;
+
+		if (!FORCE && existingHash === hash) {
+			console.log(`ok     [${target}] projects/${rel} (up to date)`);
+			skipped++;
+			continue;
+		}
+
+		if (DRY) {
+			console.log(`would  [${target}] projects/${rel}`);
+			continue;
+		}
+
+		try {
+			const description = await translateDescription(data.description, target);
+			const outMeta = {
+				description,
+				lang: target,
+				source: `projects/${slug}`,
+				sourceHash: hash,
+			};
+			const fm = yaml.dump(outMeta).trimEnd();
+			mkdirSync(dirname(outPath), { recursive: true });
+			writeFileSync(outPath, `---\n${fm}\n---\n`);
+			console.log(`wrote  [${target}] projects/${rel}`);
+			done++;
+		} catch (err) {
+			console.error(`error  [${target}] projects/${rel}: ${err.message}`);
 			failed++;
 		}
 	}

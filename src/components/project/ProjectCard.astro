@@ -8,10 +8,13 @@ interface Props {
 	project: CollectionEntry<"project">;
 	posts: CollectionEntry<"post">[];
 	locale: UiLanguage;
+	/** Localized description for this locale; falls back to the source one. */
+	descriptions?: Map<string, string>;
 	titles?: Map<string, string>;
 }
 
-const { project, posts, locale, titles } = Astro.props;
+const { project, posts, locale, titles, descriptions } = Astro.props;
+const description = descriptions?.get(project.id) ?? project.data.description;
 const ui = getUiStrings(locale);
 ---
 
@@ -44,7 +47,7 @@ const ui = getUiStrings(locale);
 		</time>
 	</header>
 
-	<p class="leading-6">{project.data.description}</p>
+	<p class="leading-6">{description}</p>
 
 	<ul class="mt-3 flex flex-wrap gap-2" aria-label={ui["projects.techStack"]}>
 		{project.data.techStack.map((technology) => (
