@@ -6,7 +6,7 @@ const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 
 <back-to-top id="back-to-top">
 	<button
-		class="hover:bg-accent active:scale-95 fixed end-4 bottom-8 z-90 flex h-10 w-10 translate-y-28 cursor-pointer items-center justify-center rounded-md bg-global-text text-global-bg opacity-0 shadow-md transition-all transition-discrete duration-300 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 hover:text-accent-2 sm:bottom-9 sm:end-8 sm:h-11 sm:w-11"
+		class="hover:bg-accent bg-global-text text-global-bg hover:text-accent-2 fixed bottom-16 z-90 flex h-10 w-10 translate-y-28 cursor-pointer items-center justify-center rounded-md opacity-0 shadow-md transition-[opacity,translate] duration-300 active:scale-95 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:bottom-[4.5rem] sm:h-11 sm:w-11"
 		data-show="false"
 		id="to-top-btn"
 		type="button"
@@ -27,16 +27,54 @@ const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 	</button>
 </back-to-top>
 
+<style is:global>
+	/* Keep the button in the bottom corner vertically, but align it with the
+	 * reading column horizontally: on wide screens a corner pinned to the
+	 * viewport edge sits too far away from where the mouse already is.
+	 * (100vw - 48rem) / 2 is the whitespace right of the centered max-w-3xl
+	 * <body> in Base.astro — keep the two in sync. Subtracting 3.5rem
+	 * (button width + breathing room) places the whole button just OUTSIDE
+	 * that edge instead of overlapping the article; on narrow windows the
+	 * max() floors it back to a plain corner button.
+	 *
+	 * On post pages with a TOC the script below pins the button to the TOC
+	 * element itself, so no viewport math is involved there. */
+	back-to-top > button {
+		inset-inline-end: max(1rem, calc((100vw - 48rem) / 2 - 3.5rem));
+	}
+	@media (min-width: 40rem) {
+		back-to-top > button {
+			inset-inline-end: max(2rem, calc((100vw - 48rem) / 2 - 3.5rem));
+		}
+	}
+</style>
+
 <script>
 	// Vertical distance (px) from the top after which the button becomes visible.
 	const SHOW_THRESHOLD = 400;
+	// Must match the lg: breakpoint used by the TOC's lg:sticky classes.
+	const LG_QUERY = window.matchMedia("(min-width: 64rem)");
 
 	class BackToTop extends HTMLElement {
 		#button: HTMLButtonElement | null = null;
 
 		#update = () => {
-			if (this.#button) {
-				this.#button.dataset.show = String(window.scrollY > SHOW_THRESHOLD);
+			if (!this.#button) return;
+			this.#button.dataset.show = String(window.scrollY > SHOW_THRESHOLD);
+			// On wide post pages, center the button on the TOC element itself:
+			// the button stays at a fixed spot relative to the TOC regardless
+			// of how wide the window is. The TOC is lg:sticky, so its
+			// getBoundingClientRect() already reflects the current viewport
+			// position; scroll and resize both re-run this.
+			const toc = document.querySelector(".toc");
+			if (toc && LG_QUERY.matches) {
+				const rect = toc.getBoundingClientRect();
+				const center = rect.left + rect.width / 2;
+				const end = window.innerWidth - center - this.#button.offsetWidth / 2;
+				this.#button.style.insetInlineEnd = `${end}px`;
+			} else {
+				// No TOC (or narrow window): fall back to the CSS formula.
+				this.#button.style.insetInlineEnd = "";
 			}
 		};
 
@@ -51,6 +89,7 @@ const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 			// position resets but no scroll event is fired.
 			window.addEventListener("scroll", this.#update, { passive: true });
 			window.addEventListener("resize", this.#update);
+			LG_QUERY.addEventListener("change", this.#update);
 			this.#update();
 		}
 
@@ -58,6 +97,7 @@ const ui = getUiStrings(uiLanguageFromPath(Astro.url.pathname));
 			this.#button?.removeEventListener("click", this.#scrollToTop);
 			window.removeEventListener("scroll", this.#update);
 			window.removeEventListener("resize", this.#update);
+			LG_QUERY.removeEventListener("change", this.#update);
 			this.#button = null;
 		}
 	}
