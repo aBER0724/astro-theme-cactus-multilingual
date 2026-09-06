@@ -59,7 +59,7 @@ const ui = {
 		"nav.main": "Main",
 		"nav.footer": "Footer",
 		"header.openMenu": "Open main menu",
-		"home.title": "aBER",
+		"home.title": "Astro Cactus",
 		"home.greeting": "Hey there 👋",
 		"home.intro":
 			"Welcome to my little corner of the internet. I'm an information security undergrad preparing for Japanese master's entrance exams, and I write about development, school life, and whatever else catches my eye.",
@@ -102,7 +102,7 @@ const ui = {
 		"tags.metaTitle": "Posts about",
 		"about.title": "About",
 		"about.description":
-			"About aBER — a personal blog author preparing for Japanese master's entrance exams",
+			"About the author of this blog",
 		"uses.title": "Uses",
 		"uses.description":
 			"My daily writing and development setup for coding, publishing, and keeping this blog tidy.",
@@ -139,7 +139,7 @@ const ui = {
 		"nav.main": "主导航",
 		"nav.footer": "页脚",
 		"header.openMenu": "打开主菜单",
-		"home.title": "aBER",
+		"home.title": "Astro Cactus",
 		"home.greeting": "你好 👋",
 		"home.intro":
 			"欢迎来到我的网络小角落。我是一名信息安全专业的本科生，正在备考日本硕士入学考试，平时写一些开发、校园生活以及各种吸引我注意力的话题。",
@@ -181,7 +181,7 @@ const ui = {
 		"tags.metaDesc": "查看带有该标签的所有文章 -",
 		"tags.metaTitle": "关于",
 		"about.title": "关于",
-		"about.description": "关于 aBER —— 一位准备日本硕士入学考试的个人博客作者",
+		"about.description": "关于本博客的作者",
 		"uses.title": "设备",
 		"uses.description": "我日常写作和开发的设备配置，用于写代码、发布内容以及维护这个博客。",
 		"pagination.previous": "上一页",
@@ -217,7 +217,7 @@ const ui = {
 		"nav.main": "メインナビ",
 		"nav.footer": "フッター",
 		"header.openMenu": "メインメニューを開く",
-		"home.title": "aBER",
+		"home.title": "Astro Cactus",
 		"home.greeting": "こんにちは 👋",
 		"home.intro":
 			"私のネットの小さな居場所へようこそ。情報セキュリティ専攻の学部生で、日本の大学院入試に向けて勉強中。開発や学生生活、興味を引かれた様々なことを書いています。",
@@ -259,7 +259,7 @@ const ui = {
 		"tags.metaDesc": "このタグのすべての記事を見る -",
 		"tags.metaTitle": "について",
 		"about.title": "プロフィール",
-		"about.description": "aBERについて — 日本の大学院入試を準備する個人ブログの著者",
+		"about.description": "このブログの著者について",
 		"uses.title": "使用機材",
 		"uses.description": "コーディング、公開、このブログの整理に使う日常の執筆・開発環境。",
 		"pagination.previous": "前へ",

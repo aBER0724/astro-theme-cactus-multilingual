@@ -109,7 +109,7 @@ export default defineConfig({
 	},
 	vite: {
 		preview: {
-			allowedHosts: ["dev-mac.aberrrrrrr.space"],
+			allowedHosts: ["localhost"],
 		},
 		plugins: [tailwind(), rawFonts([".ttf", ".woff"])],
 	},
