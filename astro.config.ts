@@ -12,6 +12,7 @@ import { satteriAdmonitionsPlugin } from "./src/plugins/admonitions";
 import { satteriGithubCardPlugin } from "./src/plugins/github-cards";
 import { satteriGraphvizPlugin } from "./src/plugins/graphviz";
 import { satteriMermaidPlugin } from "./src/plugins/mermaid";
+import { satteriChinesePunctuationPlugin } from "./src/plugins/chinese-punctuation";
 import {
 	satteriAutolinkHeadingsPlugin,
 	satteriExternalLinksPlugin,
@@ -104,6 +105,7 @@ export default defineConfig({
 				satteriAutolinkHeadingsPlugin(),
 				satteriFootnoteLabelPlugin(),
 				satteriExternalLinksPlugin(),
+				satteriChinesePunctuationPlugin(),
 			],
 		}),
 	},

@@ -25,50 +25,53 @@ A multilingual fork of [Astro Cactus](https://github.com/chrismwilliams/astro-ca
 
 Replace pnpm with your choice of npm / yarn.
 
-| Command           | Action                                                         |
-| :---------------- | :------------------------------------------------------------- |
-| `pnpm install`    | Installs dependencies                                          |
-| `pnpm dev`        | Starts local dev server at `localhost:4321`                    |
-| `pnpm build`      | Build your production site to `./dist/`                        |
-| `pnpm postbuild`  | Pagefind script to build the static search of blog posts       |
-| `pnpm preview`    | Preview your build locally, before deploying                   |
-| `pnpm astro sync` | Generate types based on your config in `src/content.config.ts` |
+| Command                | Action                                                         |
+| :--------------------- | :------------------------------------------------------------- |
+| `pnpm install`         | Installs dependencies                                          |
+| `pnpm dev`             | Starts local dev server at `localhost:4321`                    |
+| `pnpm build`           | Build your production site to `./dist/`                        |
+| `pnpm postbuild`       | Pagefind script to build the static search of blog posts       |
+| `pnpm preview`         | Preview your build locally, before deploying                   |
+| `pnpm new:post`        | Interactively create a new Chinese draft in `content/posts/`   |
+| `pnpm astro sync`      | Generate types based on your config in `src/content.config.ts` |
 | `pnpm translate:dry`   | Preview pending Japanese/English translations (no API calls)   |
-| `pnpm translate`       | Translate changed Chinese posts into Japanese and English     |
-| `pnpm translate:force` | Re-translate all Chinese posts, ignoring source hashes        |
+| `pnpm translate`       | Translate changed Chinese posts into Japanese and English      |
+| `pnpm translate:force` | Re-translate all Chinese posts, ignoring source hashes         |
 
 ## Adding Posts, Notes, and Tags
 
 Content lives in the `content/` directory: `content/posts`, `content/notes`, and `content/tags`. The filename of a file becomes its slug/url. For a tag page to render, the filename in `content/tags` must match a tag used in a post's `tags` frontmatter.
 
+Run `pnpm new:post` to enter a title, slug, description, and comma-separated tags. The command creates a `draft: true` Chinese Markdown post with the current timestamp and refuses to overwrite an existing file.
+
 ### Post Frontmatter
 
-| Property (\* required) | Description                                                                                             |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| title \*               | Used as the link text, the h1, and the page title. Max 60 chars.                                        |
-| description \*         | Used as the SEO description property.                                                                   |
-| publishDate \*         | Post publish date. Date format/locale can be changed in `src/site.config.ts`.                           |
-| updatedDate            | Optional. Date the post was last updated.                                                               |
-| tags                   | Optional. Any new tags generate pages at `/tags/[tag]`.                                                 |
-| coverImage             | Optional. `{ src: "./path-to-image", alt: "...", }` adds a cover image to the top of the post.          |
-| ogImage                | Optional. An OG image is auto-generated with Satori unless this property is provided.                   |
-| draft                  | Optional (default `false`). `true` filters the post out of the production build.                        |
-| lang                   | Optional source language; defaults to `zh-CN` and controls auto-translation.                         |
+| Property (\* required) | Description                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------- |
+| title \*               | Used as the link text, the h1, and the page title. Max 60 chars.                               |
+| description \*         | Used as the SEO description property.                                                          |
+| publishDate \*         | Post publish date. Date format/locale can be changed in `src/site.config.ts`.                  |
+| updatedDate            | Optional. Date the post was last updated.                                                      |
+| tags                   | Optional. Any new tags generate pages at `/tags/[tag]`.                                        |
+| coverImage             | Optional. `{ src: "./path-to-image", alt: "...", }` adds a cover image to the top of the post. |
+| ogImage                | Optional. An OG image is auto-generated with Satori unless this property is provided.          |
+| draft                  | Optional (default `false`). `true` filters the post out of the production build.               |
+| lang                   | Optional source language; defaults to `zh-CN` and controls auto-translation.                   |
 
 ### Note Frontmatter
 
-| Property (\* required) | Description                                             |
-| ---------------------- | ------------------------------------------------------- |
+| Property (\* required) | Description                                              |
+| ---------------------- | -------------------------------------------------------- |
 | title \*               | Used as the link text, page title, and h1. Max 60 chars. |
 | description            | Optional. Used for the meta description.                 |
 | publishDate \*         | ISO 8601 format with offsets allowed.                    |
 
 ### Tag Frontmatter
 
-| Property    | Description                                                                                 |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| title       | Optional. Used as the h1 on the tag page. Max 60 chars.                                     |
-| description | Optional. Used for the meta description and the first paragraph under the h1.               |
+| Property    | Description                                                                   |
+| ----------- | ----------------------------------------------------------------------------- |
+| title       | Optional. Used as the h1 on the tag page. Max 60 chars.                       |
+| description | Optional. Used for the meta description and the first paragraph under the h1. |
 
 ## Customization
 
