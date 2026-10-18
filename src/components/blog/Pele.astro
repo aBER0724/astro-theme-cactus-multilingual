@@ -1,0 +1,80 @@
+<!--
+  Client-side diagram renderer (pele).
+
+  `satteriMermaidPlugin` compiles ```mermaid blocks into <pre class="mermaid">,
+  so they bypass expressive-code. This script lazily imports pele (a Mermaid
+  syntax renderer) and draws any .mermaid blocks on the page.
+
+  Pele paints from CSS variables (see `pre.mermaid` in global.css), so a theme
+  switch recolors the SVGs without re-rendering them. mount() also re-renders
+  when a block is resized, which keeps wide diagrams readable on narrow screens.
+
+  Because the site uses Astro View Transitions, we hook into `astro:page-load`
+  (fires on first load AND after every navigation) and destroy the previous
+  mounts, since their DOM is gone.
+-->
+<script>
+	type PeleLazy = typeof import("pele/lazy");
+	type Mounted = import("pele/lazy").Mounted;
+
+	// `pele/lazy` loads one diagram type per page, so a post only ships the
+	// diagram kinds it actually uses.
+	let pelePromise: Promise<PeleLazy> | null = null;
+	let mounted: Mounted[] = [];
+
+	// The SVG replaces the block's text content, so keep the source around for
+	// re-mounts (page reload from bfcache, view transitions returning here).
+	function sourceOf(block: HTMLElement): string {
+		block.dataset.source ??= block.textContent ?? "";
+		return block.dataset.source;
+	}
+
+	function destroyAll() {
+		for (const diagram of mounted) diagram.destroy();
+		mounted = [];
+	}
+
+	async function renderAll() {
+		const blocks = Array.from(document.querySelectorAll<HTMLElement>("pre.mermaid"));
+		if (blocks.length === 0) return;
+
+		// Read every source before the first await: mountAsync() replaces the
+		// block's text content with SVG.
+		const queue = blocks
+			.map((block) => ({ block, source: sourceOf(block) }))
+			.filter(({ source }) => source.trim().length > 0);
+		if (queue.length === 0) return;
+
+		pelePromise ??= import("pele/lazy");
+		const { mountAsync } = await pelePromise;
+
+		// Sequential on purpose: mountAsync() loads the diagram type on first
+		// use, and pele measures label fonts from the page.
+		for (const { block, source } of queue) {
+			try {
+				// Pele sizes labels while measuring them, so it needs the size up
+				// front: follow the font size the block actually inherits.
+				const fontSize = Number.parseFloat(getComputedStyle(block).fontSize) || 16;
+				mounted.push(await mountAsync(block, source, { fontSize }));
+			} catch (error) {
+				console.warn("[pele] failed to render diagram:", error);
+			}
+		}
+	}
+
+	// Runs once on initial load and after each view transition.
+	document.addEventListener("astro:page-load", () => {
+		destroyAll();
+		void renderAll();
+	});
+
+	// The old page's DOM is about to be swapped out; stop observing it.
+	document.addEventListener("astro:before-swap", destroyAll);
+
+	// Returning from bfcache restores a page whose diagrams are still mounted.
+	window.addEventListener("pageshow", (event) => {
+		if (!event.persisted) return;
+		destroyAll();
+		void renderAll();
+	});
+</script>

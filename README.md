@@ -6,7 +6,7 @@ A multilingual fork of [Astro Cactus](https://github.com/chrismwilliams/astro-ca
 
 - **Trilingual out of the box** — `zh` (unprefixed default) + `en` / `ja` prefixed routes. All language & translation settings live in one `src/site.config.ts` → `i18nConfig`; the switcher, routing, schema validation and every list page derive from it — adding a language is a one-line change.
 - **Local AI translation pipeline** — `scripts/translate.mjs` turns Simplified-Chinese posts into committed `content/translations/<lang>/` files at build prep time; no runtime AI service needed (see [AI Translation](#ai-translation)).
-- **Diagrams in one place** — Mermaid, Graphviz and GitHub-embedded cards render inside Markdown posts.
+- **Diagrams in one place** — Mermaid diagrams render with [Pele](https://pele.run), Graphviz with Viz.js, and GitHub cards embed themselves, all inside Markdown posts. Diagrams inherit the theme's tokens, so dark mode and palette changes need no extra work.
 - **Scripted social cards & OG images** — generate the default social card and per-post OG images locally with `node scripts/generate-social-card.mjs`.
 - **Back-to-top + polished header/footer** — UX polish over the upstream theme.
 - **Platform-agnostic deploy** — Vercel and Cloudflare Pages both auto-detect their canonical URL (`VERCEL_URL` / `CF_PAGES_URL`); custom domains work with zero config.
@@ -20,6 +20,7 @@ A multilingual fork of [Astro Cactus](https://github.com/chrismwilliams/astro-ca
 - Automatic RSS feeds, sitemap, robots.txt
 - [Pagefind](https://pagefind.app/) static search
 - Dark & light mode
+- [Pele](https://pele.run) and [Viz.js](https://github.com/hpcc-systems/viz-js) render `mermaid` and `dot` diagrams in the browser
 
 ## Commands
 
@@ -80,6 +81,7 @@ Run `pnpm new:post` to enter a title, slug, description, and comma-separated tag
 - `public/icon.svg` — site logo, also the source for generated favicons & manifest icons.
 - `public/social-card.png` — default `og:image` for pages without a custom one. Regenerate with `node scripts/generate-social-card.mjs` (reads title/author from `src/site.config.ts`).
 - `src/pages/og-image/_ogMarkup.ts` — style of auto-generated OG images.
+- `src/styles/global.css` → `pre.mermaid` — diagram palette. Pele reads `--pele-bg`, `--pele-fg`, `--pele-line`, `--pele-surface`, `--pele-border`, `--pele-accent` and `--pele-series-1…8`; they point at the theme tokens, so swapping the palette rethemes diagrams too. Keep `--pele-font` in sync with the body font, because Pele measures labels with it before drawing.
 
 ## Multilingual (i18n)
 

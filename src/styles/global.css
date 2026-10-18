@@ -165,9 +165,44 @@ pre.mermaid svg,
 pre.graphviz svg {
 	max-width: 100%;
 	height: auto;
-	/* mermaid renders its SVG as display:block with an inline max-width, so
+	/* pele renders its SVG as display:block with an inline max-width, so
 	   text-align on the parent won't center it; margin auto does. */
 	margin-inline: auto;
+}
+
+/* Pele paints its SVG from CSS variables, so a theme switch recolors existing
+   diagrams instead of re-rendering them. Pointing them at the semantic tokens
+   makes diagrams follow light/dark — and any palette you swap in — for free. */
+pre.mermaid {
+	--pele-bg: var(--color-global-bg);
+	--pele-fg: var(--color-global-text);
+	--pele-muted: var(--color-muted);
+	--pele-line: var(--color-muted);
+	--pele-surface: color-mix(in oklab, var(--color-global-text) 7%, var(--color-global-bg));
+	--pele-surface-alt: color-mix(in oklab, var(--color-global-text) 13%, var(--color-global-bg));
+	--pele-border: color-mix(in oklab, var(--color-muted) 60%, var(--color-global-bg));
+	--pele-accent: var(--color-link);
+	--pele-critical: var(--color-accent);
+	--pele-error: var(--color-accent);
+	/* Charts and color-coded categories: the theme has three hues, so derive
+	   the rest from them rather than hard-coding a palette. */
+	--pele-series-1: var(--color-link);
+	--pele-series-2: var(--color-accent);
+	--pele-series-3: var(--color-quote);
+	--pele-series-4: color-mix(in oklab, var(--color-link) 60%, var(--color-accent));
+	--pele-series-5: color-mix(in oklab, var(--color-accent) 60%, var(--color-quote));
+	--pele-series-6: color-mix(in oklab, var(--color-link) 60%, var(--color-quote));
+	--pele-series-7: color-mix(in oklab, var(--color-link) 45%, var(--color-global-bg));
+	--pele-series-8: color-mix(in oklab, var(--color-accent) 45%, var(--color-global-bg));
+	/* Pele measures labels with this font before drawing, so it must match the
+	   face the body uses (Tailwind's default monospace stack). */
+	--pele-font:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+		monospace;
+	--pele-font-mono:
+		ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+		monospace;
+	--pele-radius: 4px;
 }
 
 /* Graphviz emits black-on-white SVG with hard-coded fill/stroke attributes.
