@@ -38,6 +38,8 @@ Replace pnpm with your choice of npm / yarn.
 | `pnpm translate:dry`   | Preview pending Japanese/English translations (no API calls)   |
 | `pnpm translate`       | Translate changed Chinese posts into Japanese and English      |
 | `pnpm translate:force` | Re-translate all Chinese posts, ignoring source hashes         |
+| `pnpm punctuation:check` | Check Chinese source punctuation is in the canonical spelling |
+| `pnpm punctuation:fix` | Rewrite Chinese source punctuation to the canonical spelling |
 
 ## Adding Posts, Notes, and Tags
 
@@ -73,6 +75,18 @@ Run `pnpm new:post` to enter a title, slug, description, and comma-separated tag
 | ----------- | ----------------------------------------------------------------------------- |
 | title       | Optional. Used as the h1 on the tag page. Max 60 chars.                       |
 | description | Optional. Used for the meta description and the first paragraph under the h1. |
+
+### Chinese Punctuation
+
+Chinese posts are written with half-width punctuation + one space (`文字, 文字`) and rendered as `文字，文字` — `src/plugins/chinese-punctuation.ts` converts the marks and drops the space, so the source keeps the author's typing habit.
+
+| Where | Source spelling | Rendered |
+| :---- | :-------------- | :------- |
+| Body prose | `,` `.` `!` `?` `;` `:` + one space; `(说明)` hugging | `，` `。` `！` `？` `；` `：`; `（说明）` |
+| Frontmatter | already full-width (goes into meta tags and social cards unrendered) | — |
+| Left as typed | `、` `——` `……`, quotes (`smartypants` rewrites `"` before the plugin runs) | — |
+
+`pnpm punctuation:check` reports deviations, `pnpm punctuation:fix` rewrites them. Code fences, inline code, links, URLs, footnotes, directives and numbers (`1,000`, `10:30`, `config.yaml`) are never touched.
 
 ## Customization
 

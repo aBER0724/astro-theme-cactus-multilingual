@@ -19,6 +19,7 @@
 		"translate:force": "node --env-file-if-exists=.env scripts/translate.mjs --force",
 		"translate:dry": "node --env-file-if-exists=.env scripts/translate.mjs --dry",
 		"punctuation:check": "node scripts/check-punctuation.mjs",
+		"punctuation:fix": "node scripts/check-punctuation.mjs --fix",
 		"check": "astro check && biome check",
 		"lint": "biome check --write",
 		"format": "prettier -w . --cache"
