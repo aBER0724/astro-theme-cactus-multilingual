@@ -23,6 +23,9 @@
  *     and content/translations/<lang>/projects/<slug>.md (projects).
  *   - Incremental: skips posts whose translation sourceHash already matches,
  *     pass --force to re-translate everything.
+ *   - sourceHash covers the *normalised* source (punctuation spelling folded to
+ *     full-width), so switching between `, ` and `，` never triggers a rewrite.
+ *     Use --rehash to rebless existing translations after a hash change.
  *   - --dry prints what would be done without calling the API.
  */
 import { createHash } from "node:crypto";
@@ -30,6 +33,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as yaml from "js-yaml";
+import { convertChinesePunctuation } from "../src/utils/chinese-punctuation.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -53,6 +57,7 @@ if (existsSync(join(ROOT, ".env"))) {
 
 const FORCE = process.argv.includes("--force");
 const DRY = process.argv.includes("--dry");
+const REHASH = process.argv.includes("--rehash");
 const AI_BASE = process.env.AI_API_BASE?.replace(/\/+$/, "");
 const AI_KEY = process.env.AI_API_KEY;
 const AI_MODEL = process.env.AI_MODEL;
@@ -136,6 +141,11 @@ function splitFrontmatter(raw) {
 }
 
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
+
+/* Punctuation spelling is presentation, not content: `文字, 文字` and `文字，文字`
+ * render identically. Hashing the normalised form keeps a spelling-only edit
+ * from invalidating every existing translation and paying for a rewrite. */
+const sourceDigest = (raw) => sha256(convertChinesePunctuation(raw, true));
 
 /* Transient upstream failures (Cloudflare 524, 429 rate limit, 5xx) used to
  * bubble up and blow away a whole 10-minute translation attempt. Retry them
@@ -760,6 +770,43 @@ async function translateBodyWithBlocksValidated(body, lang) {
 }
 
 /* ---------------- main ---------------- */
+/* ---------------- --rehash: rebless translations without calling the API ---------------- */
+if (REHASH) {
+	let updated = 0;
+	let skippedFiles = 0;
+
+	for (const file of walk(TRANS_DIR)) {
+		const raw = readFileSync(file, "utf8");
+		const { data } = splitFrontmatter(raw);
+		if (!data.source) {
+			skippedFiles++;
+			continue;
+		}
+
+		const srcPath = join(ROOT, "content", `${data.source}${extname(file)}`);
+		if (!existsSync(srcPath)) {
+			console.warn(`skip   ${file} (source ${data.source} not found)`);
+			skippedFiles++;
+			continue;
+		}
+
+		const digest = sourceDigest(readFileSync(srcPath, "utf8"));
+		if (data.sourceHash === digest) continue;
+
+		const next = raw.replace(/^sourceHash:.*$/m, `sourceHash: ${digest}`);
+		if (next === raw) {
+			skippedFiles++;
+			continue;
+		}
+		writeFileSync(file, next);
+		console.log(`rehash ${file.replace(`${ROOT}/`, "")}`);
+		updated++;
+	}
+
+	console.log(`Rehashed ${updated} translation file(s), skipped ${skippedFiles}.`);
+	process.exit(0);
+}
+
 const sources = walk(POSTS_DIR);
 if (!sources.length) {
 	console.log("No posts found in content/posts/ — nothing to translate.");
@@ -788,7 +835,7 @@ for (const srcPath of sources) {
 	const rel = srcPath.slice(POSTS_DIR.length + 1);
 	const ext = extname(rel);
 	const slug = rel.slice(0, -ext.length);
-	const hash = sha256(srcRaw);
+	const hash = sourceDigest(srcRaw);
 
 	const validTargets = TARGETS.filter((target) => {
 		if (!LANG_NAMES[target]) {
@@ -859,7 +906,7 @@ for (const srcPath of projectSources) {
 	const rel = srcPath.slice(PROJECTS_DIR.length + 1);
 	const ext = extname(rel);
 	const slug = rel.slice(0, -ext.length);
-	const hash = sha256(srcRaw);
+	const hash = sourceDigest(srcRaw);
 
 	for (const target of TARGETS) {
 		if (!LANG_NAMES[target]) continue;

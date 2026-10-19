@@ -18,6 +18,7 @@
 		"translate": "node --env-file-if-exists=.env scripts/translate.mjs",
 		"translate:force": "node --env-file-if-exists=.env scripts/translate.mjs --force",
 		"translate:dry": "node --env-file-if-exists=.env scripts/translate.mjs --dry",
+		"translate:rehash": "node --env-file-if-exists=.env scripts/translate.mjs --rehash",
 		"punctuation:check": "node scripts/check-punctuation.mjs",
 		"punctuation:fix": "node scripts/check-punctuation.mjs --fix",
 		"check": "astro check && biome check",
