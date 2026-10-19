@@ -19,7 +19,10 @@ export function satteriChinesePunctuationPlugin(): HastPluginDefinition {
 		text(node, ctx) {
 			if (!isChineseDocument(ctx)) return undefined;
 
-			let parent = ctx.parent(node);
+			// `ctx.parent` is overloaded: the element form returns a parent, the
+			// generic one can return `undefined` at the root. Annotate once so the
+			// loop keeps the looser type instead of narrowing to the first overload.
+			let parent: ReturnType<typeof ctx.parent> = ctx.parent(node);
 			while (parent) {
 				if (parent.type === "element" && (parent.tagName === "code" || parent.tagName === "pre")) {
 					return undefined;
